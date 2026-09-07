@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+.btn-primary-3d {
+  background: linear-gradient(180deg, #8FBF5A 0%, #6B9A4A 50%, #5A7D4F 100%);
+  border: 1px solid #7CB342;
+  border-bottom: 3px solid #4A6B3D;
+  box-shadow: 0 4px 0 #3D5A32, 0 6px 12px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+  text-shadow: 0 1px 0 rgba(0,0,0,0.3);
+  transition: all 0.15s ease;
+}
+
+.btn-primary-3d:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(180deg, #A3D46E 0%, #7CB342 50%, #6B8F5A 100%);
+  box-shadow: 0 5px 0 #3D5A32, 0 8px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+
+.btn-primary-3d:active:not(:disabled) {
+  transform: translateY(2px);
+  border-bottom-width: 1px;
+  box-shadow: 0 1px 0 #3D5A32, 0 2px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+
+.btn-secondary-3d {
+  background: linear-gradient(180deg, #1F3324 0%, #1A2A1E 100%);
+  border: 1px solid #2B4432;
+  border-bottom: 2px solid #1E3325;
+  box-shadow: 0 2px 0 #121A13, 0 3px 8px rgba(0,0,0,0.25);
+  transition: all 0.15s ease;
+}
+
+.btn-secondary-3d:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(180deg, #243D2A 0%, #1F3324 100%);
+  border-color: #324E3A;
+  box-shadow: 0 3px 0 #121A13, 0 5px 10px rgba(0,0,0,0.3);
+}
+
+.btn-secondary-3d:active:not(:disabled) {
+  transform: translateY(1px);
+  border-bottom-width: 1px;
+  box-shadow: 0 1px 0 #121A13;
+}
+
+.olive-glow {
+  box-shadow: 0 0 0 1px rgba(143,191,90,0.15), 0 0 24px rgba(143,191,90,0.08);
+}
+
+.scroll-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scroll-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
