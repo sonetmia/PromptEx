@@ -79,8 +79,11 @@ export default async function handler(req, res) {
     if (req.method === "POST" && path.endsWith("/admin/login")) {
       const whatsapp = normalizeWhatsapp(req.body?.whatsappNumber);
       const password = String(req.body?.password || "");
-      if (!adminWhatsapp() || !adminPasswordHash() || !sessionSecret()) return res.status(503).json({ error: "Super Admin authentication is not configured." });
-      if (whatsapp !== adminWhatsapp() || !(await verifyPassword(password, adminPasswordHash()))) return res.status(401).json({ error: "Invalid Super Admin credentials." });
+      const configuredWhatsapp = adminWhatsapp();
+      const configuredHash = adminPasswordHash();
+      if (!configuredWhatsapp || !configuredHash || !sessionSecret()) return res.status(503).json({ error: "Super Admin authentication is not configured." });
+      if (whatsapp !== configuredWhatsapp) return res.status(401).json({ error: "Invalid Super Admin WhatsApp number." });
+      if (!(await verifyPassword(password, configuredHash))) return res.status(401).json({ error: "Invalid Super Admin password." });
       setAdminCookie(res);
       return res.json({ user: publicUser(builtinAdminUser()) });
     }
