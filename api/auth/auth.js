@@ -7,7 +7,13 @@ const ADMIN_COOKIE = "promptex_admin_session";
 const SHORT = 8 * 60 * 60 * 1000;
 const LONG = 30 * 24 * 60 * 60 * 1000;
 
-const normalizeWhatsapp = (v) => String(v || "").trim().replace(/[\s()-]/g, "");
+const normalizeWhatsapp = (v) => {
+  let value = String(v || "").trim().replace(/[\s()-]/g, "");
+  if (value.startsWith("00")) value = `+${value.slice(2)}`;
+  if (value.startsWith("8801")) value = `0${value.slice(3)}`;
+  if (value.startsWith("+8801")) value = `0${value.slice(4)}`;
+  return value;
+};
 const hashToken = (v) => crypto.createHash("sha256").update(v).digest("hex");
 const sessionSecret = () => String(process.env.SESSION_SECRET || "").trim();
 const adminWhatsapp = () => normalizeWhatsapp(process.env.ADMIN_WHATSAPP);
