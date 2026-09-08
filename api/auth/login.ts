@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 const COOKIE = "promptex_session";
+const DEVICE_COOKIE = "promptex_device";
 const SHORT = 8 * 60 * 60 * 1000;
 const LONG = 30 * 24 * 60 * 60 * 1000;
 
@@ -26,7 +27,7 @@ const verifyPassword = async (password: string, encoded: string) => {
   return crypto.timingSafeEqual(expected, hexSalt);
 };
 const parseCookies = (req: any) => Object.fromEntries(String(req.headers.cookie || "").split(";").filter(Boolean).map((p: string) => { const i = p.indexOf("="); return [p.slice(0, i).trim(), decodeURIComponent(p.slice(i + 1).trim())]; }));
-const setCookie = (res: any, token: string, maxAge: number) => res.setHeader("Set-Cookie", `${COOKIE}=${encodeURIComponent(token)}; Max-Age=${Math.floor(maxAge / 1000)}; Path=/; HttpOnly; SameSite=Lax; Secure`);
+const setCookie = (res: any, name: string, token: string, maxAge: number) => res.setHeader("Set-Cookie", `${name}=${encodeURIComponent(token)}; Max-Age=${Math.floor(maxAge / 1000)}; Path=/; HttpOnly; SameSite=Lax; Secure`);
 
 export default async function handler(req: any, res: any) {
   try {
@@ -38,12 +39,27 @@ export default async function handler(req: any, res: any) {
     if (user.status === "PENDING") return res.status(403).json({ error: "Your account is waiting for Super Admin approval.", status: user.status });
     if (user.status === "REJECTED") return res.status(403).json({ error: "Your registration has been rejected. Please contact the administrator.", status: user.status });
     if (user.status === "SUSPENDED") return res.status(403).json({ error: "Your account has been suspended. Please contact the administrator.", status: user.status });
-    await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+
+    const cookies = parseCookies(req);
+    const currentDeviceToken = cookies[DEVICE_COOKIE];
+    if (user.deviceTokenHash && (!currentDeviceToken || hashToken(currentDeviceToken) !== user.deviceTokenHash)) {
+      return res.status(403).json({ error: "This account is already registered to another device. Please contact the administrator.", code: "DEVICE_MISMATCH" });
+    }
+
+    let deviceToken = currentDeviceToken;
+    if (!user.deviceTokenHash) {
+      deviceToken = crypto.randomBytes(32).toString("base64url");
+      await prisma.user.update({ where: { id: user.id }, data: { deviceTokenHash: hashToken(deviceToken), deviceBoundAt: new Date(), lastLoginAt: new Date() } });
+    } else {
+      await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+    }
+
     const token = crypto.randomBytes(32).toString("base64url");
     const remember = Boolean(req.body?.rememberDevice);
     const expiresAt = new Date(Date.now() + (remember ? LONG : SHORT));
     await prisma.session.create({ data: { userId: user.id, tokenHash: hashToken(token), expiresAt, rememberDevice: remember } });
-    setCookie(res, token, expiresAt.getTime() - Date.now());
+    setCookie(res, COOKIE, token, expiresAt.getTime() - Date.now());
+    if (deviceToken) setCookie(res, DEVICE_COOKIE, deviceToken, LONG);
     return res.json({ user: { id: user.id, fullName: user.fullName, whatsappNumber: user.whatsappNumber, email: user.email, studentId: user.studentId, role: user.role, status: user.status } });
   } catch (error) {
     console.error("Student login API error:", error);
