@@ -62,9 +62,9 @@ function Spinner() { return <div className="auth-loading"><div className="auth-l
 
 function AdminDashboard({ user, onLogout }: { user: User; onLogout: () => void }) {
   const [students, setStudents] = useState<Student[]>([]); const [filter, setFilter] = useState("ALL"); const [busyId, setBusyId] = useState(""); const [error, setError] = useState("");
-  const load = () => api("/api/auth/admin/students").then((d) => setStudents(d.students)).catch((e) => setError(e.message));
+  const load = () => api("/api/admin/students").then((d) => setStudents(d.students)).catch((e) => setError(e.message));
   useEffect(() => { load(); }, []);
-  const changeStatus = async (student: Student, status: string) => { if (!window.confirm(`Change ${student.fullName} to ${status.toLowerCase()}?`)) return; setBusyId(student.id); setError(""); try { await api(`/api/auth/admin/students/${student.id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }); await load(); } catch (e: any) { setError(e.message); } finally { setBusyId(""); } };
+  const changeStatus = async (student: Student, status: string) => { if (!window.confirm(`Change ${student.fullName} to ${status.toLowerCase()}?`)) return; setBusyId(student.id); setError(""); try { await api(`/api/admin/students/${student.id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }); await load(); } catch (e: any) { setError(e.message); } finally { setBusyId(""); } };
   const filtered = students.filter((s) => filter === "ALL" || s.status === filter);
   return <div className="admin-page"><header className="admin-header"><div><div className="admin-kicker">PromptEx</div><h1>Student Management</h1><p>Welcome, {user.fullName}</p></div><button className="admin-logout" onClick={onLogout}>Logout</button></header>
     {error && <div className="auth-alert error admin-alert">{error}</div>}
