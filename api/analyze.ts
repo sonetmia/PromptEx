@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { PrismaClient } from "@prisma/client";
-import { analyze } from "./analyze-core";
+import { analyze } from "./analyze-core.js";
 
 const prisma = new PrismaClient();
 const SESSION_COOKIE = "promptex_session";
