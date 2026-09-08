@@ -27,7 +27,11 @@ const verifyPassword = async (password: string, encoded: string) => {
   return crypto.timingSafeEqual(expected, hexSalt);
 };
 const parseCookies = (req: any) => Object.fromEntries(String(req.headers.cookie || "").split(";").filter(Boolean).map((p: string) => { const i = p.indexOf("="); return [p.slice(0, i).trim(), decodeURIComponent(p.slice(i + 1).trim())]; }));
-const setCookie = (res: any, name: string, token: string, maxAge: number) => res.setHeader("Set-Cookie", `${name}=${encodeURIComponent(token)}; Max-Age=${Math.floor(maxAge / 1000)}; Path=/; HttpOnly; SameSite=Lax; Secure`);
+const addCookie = (res: any, name: string, token: string, maxAge: number) => {
+  const value = `${name}=${encodeURIComponent(token)}; Max-Age=${Math.floor(maxAge / 1000)}; Path=/; HttpOnly; SameSite=Lax; Secure`;
+  const existing = res.getHeader("Set-Cookie");
+  res.setHeader("Set-Cookie", existing ? [...(Array.isArray(existing) ? existing : [existing]), value] : [value]);
+};
 
 export default async function handler(req: any, res: any) {
   try {
@@ -42,9 +46,7 @@ export default async function handler(req: any, res: any) {
 
     const cookies = parseCookies(req);
     const currentDeviceToken = cookies[DEVICE_COOKIE];
-    if (user.deviceTokenHash && (!currentDeviceToken || hashToken(currentDeviceToken) !== user.deviceTokenHash)) {
-      return res.status(403).json({ error: "This account is already registered to another device. Please contact the administrator.", code: "DEVICE_MISMATCH" });
-    }
+    if (user.deviceTokenHash && (!currentDeviceToken || hashToken(currentDeviceToken) !== user.deviceTokenHash)) return res.status(403).json({ error: "This account is already registered to another device. Please contact the administrator.", code: "DEVICE_MISMATCH" });
 
     let deviceToken = currentDeviceToken;
     if (!user.deviceTokenHash) {
@@ -58,8 +60,8 @@ export default async function handler(req: any, res: any) {
     const remember = Boolean(req.body?.rememberDevice);
     const expiresAt = new Date(Date.now() + (remember ? LONG : SHORT));
     await prisma.session.create({ data: { userId: user.id, tokenHash: hashToken(token), expiresAt, rememberDevice: remember } });
-    setCookie(res, COOKIE, token, expiresAt.getTime() - Date.now());
-    if (deviceToken) setCookie(res, DEVICE_COOKIE, deviceToken, LONG);
+    addCookie(res, COOKIE, token, expiresAt.getTime() - Date.now());
+    if (deviceToken) addCookie(res, DEVICE_COOKIE, deviceToken, LONG);
     return res.json({ user: { id: user.id, fullName: user.fullName, whatsappNumber: user.whatsappNumber, email: user.email, studentId: user.studentId, role: user.role, status: user.status } });
   } catch (error) {
     console.error("Student login API error:", error);
