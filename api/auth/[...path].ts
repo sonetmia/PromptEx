@@ -1,8 +1,3 @@
-import express from "express";
-import { registerAuthRoutes } from "../../auth.ts";
+import authHandler from "./auth.js";
 
-const app = express();
-app.use(express.json({ limit: "1mb" }));
-registerAuthRoutes(app);
-
-export default app;
+export default authHandler;
