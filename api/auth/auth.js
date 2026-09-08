@@ -17,7 +17,7 @@ const normalizeWhatsapp = (v) => {
 const hashToken = (v) => crypto.createHash("sha256").update(v).digest("hex");
 const sessionSecret = () => String(process.env.SESSION_SECRET || "").trim();
 const adminWhatsapp = () => normalizeWhatsapp(process.env.ADMIN_WHATSAPP);
-const adminPasswordHash = () => String(process.env.ADMIN_PASSWORD_HASH || "").trim();
+const adminPasswordHash = () => String(process.env.ADMIN_PASSWORD_HASH || "").trim().replace(/[\s`\"']/g, "");
 const signAdminPayload = (payload) => crypto.createHmac("sha256", sessionSecret()).update(payload).digest("base64url");
 const makeAdminCookie = () => {
   const payload = `admin:${Date.now()}`;
@@ -33,9 +33,10 @@ const verifyAdminCookie = (value) => {
   return a.length === b.length && crypto.timingSafeEqual(a, b) && Date.now() - Number(payload.slice(6)) < LONG;
 };
 const verifyPassword = async (password, encoded) => {
-  const [scheme, salt, stored] = String(encoded || "").split(":");
-  if (scheme !== "scrypt" || !salt || !stored) return false;
-  const derived = await new Promise((resolve, reject) => crypto.scrypt(password, salt, 64, (e, d) => e ? reject(e) : resolve(d)));
+  const clean = String(encoded || "").trim().replace(/[\s`\"']/g, "");
+  const [scheme, salt, stored] = clean.split(":");
+  if (scheme !== "scrypt" || !salt || !stored || !/^[0-9a-f]+$/i.test(salt) || !/^[0-9a-f]+$/i.test(stored)) return false;
+  const derived = await new Promise((resolve, reject) => crypto.scrypt(password, Buffer.from(salt, "hex"), 64, (e, d) => e ? reject(e) : resolve(d)));
   const expected = Buffer.from(stored, "hex");
   return expected.length === derived.length && crypto.timingSafeEqual(expected, derived);
 };
